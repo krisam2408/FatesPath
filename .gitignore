@@ -332,3 +332,6 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+
+#Personal Ignored
+DiscordBot/Services/ConfigurationLib/config.json
