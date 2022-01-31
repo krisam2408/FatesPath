@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FatesPathLib", "FatesPathLib\FatesPathLib.csproj", "{FDF42F75-01E3-43BF-BDFE-E41A9EBDD7D6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot", "DiscordBot\DiscordBot.csproj", "{DADFAC3B-87B4-48E5-B9CD-DD05C30A3A75}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FDF42F75-01E3-43BF-BDFE-E41A9EBDD7D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDF42F75-01E3-43BF-BDFE-E41A9EBDD7D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDF42F75-01E3-43BF-BDFE-E41A9EBDD7D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDF42F75-01E3-43BF-BDFE-E41A9EBDD7D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DADFAC3B-87B4-48E5-B9CD-DD05C30A3A75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DADFAC3B-87B4-48E5-B9CD-DD05C30A3A75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DADFAC3B-87B4-48E5-B9CD-DD05C30A3A75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DADFAC3B-87B4-48E5-B9CD-DD05C30A3A75}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0E73B20F-E29E-4AD8-AB16-468532BB7DEA}
+	EndGlobalSection
+EndGlobal
