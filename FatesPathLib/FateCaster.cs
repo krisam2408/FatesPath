@@ -9,8 +9,6 @@ namespace FatesPathLib
         private int TensorY { get; set; }
         private int TensorZ { get; set; }
 
-        public int[] BaseMatrix { get { return new int[] { TensorY, TensorZ }; } }
-
         public FateCaster(int y = 1, int z = 1)
         {
             TensorY = y;
@@ -38,6 +36,9 @@ namespace FatesPathLib
         private Dice[] CastSinglePath(PathPool path)
         {
             List<Dice> output = new();
+            List<Dice> firstRoll = new();
+            List<Dice> roteRoll = new();
+            List<Dice> againRoll = new();
 
             Random ran = new();
             int[,,] preliminarResult = new int[path.Quantity,TensorY,TensorZ];
@@ -54,55 +55,40 @@ namespace FatesPathLib
             {
                 int pickZ = ran.Next(TensorZ);
                 int pickY = ran.Next(TensorY);
-                output.Add(new(path.Dice, preliminarResult[pickX, pickY, pickZ]));
-            }
-
-            if(path.ThrowAgain)
-            {
-                List<Dice> checkPool = output;
-
-                int throwAgain;
-                do
-                {
-                    List<Dice> addedPool = new();
-                    throwAgain = 0;
-                    foreach (Dice d in checkPool)
-                        if (d.ThrowAgain(path.ThrowAgainMinValue))
-                            throwAgain++;
-
-                    for (int i = 0; i < throwAgain; i++)
-                    {
-                        int pickZ = ran.Next(TensorZ);
-                        int pickY = ran.Next(TensorY);
-                        int pickX = ran.Next(path.Quantity);
-                        addedPool.Add(new(path.Dice, preliminarResult[pickX, pickY, pickZ]));
-                    }
-
-                    output.AddRange(addedPool);
-                    checkPool = addedPool;
-
-                } while (throwAgain > 0);
+                firstRoll.Add(new(path.Dice, preliminarResult[pickX, pickY, pickZ]));
             }
 
             if(path.IsRote)
             {
-                List<Dice> addedPool = new();
-
-                int throwAgain = 0;
-                foreach (Dice d in output)
+                int failures = 0;
+                foreach (Dice d in firstRoll)
                     if (d.IsFailure(path.ThrowDifficulty))
-                        throwAgain++;
+                        failures++;
 
-                for(int i = 0;i < throwAgain;i++)
+                if(failures > 0)
                 {
-                    int pickZ = ran.Next(TensorZ);
-                    int pickY = ran.Next(TensorY);
-                    int pickX = ran.Next(path.Quantity);
-                    addedPool.Add(new(path.Dice, preliminarResult[pickX, pickY, pickZ]));
+                    PathPool rotePathPool = new(path.Dice, failures, path.ThrowDifficulty, false, 0, false);
+                    roteRoll.AddRange(CastSinglePath(rotePathPool));
                 }
-
-                output.AddRange(addedPool);
             }
+
+            if(path.ThrowAgain)
+            {
+                int againRolls = 0;
+                foreach(Dice d in firstRoll)
+                    if(d.ThrowAgain(path.ThrowAgainMinValue))
+                        againRolls++;
+
+                if(againRolls > 0)
+                {
+                    PathPool againPathPool = new(path.Dice, againRolls, path.ThrowDifficulty, true, path.ThrowAgainMinValue, false);
+                    againRoll.AddRange(CastSinglePath(againPathPool));
+                }
+            }
+
+            output.AddRange(firstRoll);
+            output.AddRange(roteRoll);
+            output.AddRange(againRoll);
 
             return output.ToArray();
         }
