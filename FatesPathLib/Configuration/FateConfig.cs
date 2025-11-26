@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FatesPathLib.Configuration
+namespace FatesPathLib.Configuration;
+
+public sealed class FateConfig
 {
-    public class FateConfig
-    {
-        public int TensorY { get; set; }
-        public int TensorZ { get; set; }
-    }
+    public int TensorY { get; set; }
+    public int TensorZ { get; set; }
 }

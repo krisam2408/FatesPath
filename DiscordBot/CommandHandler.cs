@@ -1,46 +1,69 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
+using DiscordBot.DataTransfer;
 using DiscordBot.Modules;
+using FatesPathLib.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 
-namespace DiscordBot
+namespace DiscordBot;
+
+public class CommandHandler
 {
-    public class CommandHandler
+    private readonly Dictionary<string, MethodRoute> m_methods = new();
+    private readonly FateConfig m_context;
+
+    private readonly string[] m_baseMethods = [
+        "gettype",
+        "tostring",
+        "equals",
+        "gethashcode",
+        "getarguments"
+    ];
+
+    public CommandHandler(FateConfig context) 
     {
-        private readonly DiscordSocketClient _client;
-        private readonly CommandService _commands;
+        m_context = context;
+    }
 
-        public CommandHandler(DiscordSocketClient client, CommandService commands)
+    internal async Task InstallModule<T>() where T : BaseModule
+    {
+        Type moduleType = typeof(T);
+
+        MethodInfo[] methods = moduleType
+            .GetMethods();
+
+        foreach (MethodInfo method in methods)
         {
-            _client = client;
-            _commands = commands;
+            string methodName = method
+                .Name
+                .ToLower();
+
+            if (m_baseMethods.Contains(methodName))
+                continue;
+
+            MethodRoute route = new()
+            {
+                Type = moduleType,
+                Function = method
+            };
+
+            m_methods.Add(methodName, route);
         }
+    }
 
-        public async Task InstallCommandsAsync()
-        {
-            _client.MessageReceived += HandleCommandAsync;
+    public async Task ExecuteCommand(SocketUserMessage message)
+    {
+        string content = message.Content[1..];
+        string[] teils = content.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            await _commands.AddModuleAsync<GeneralModule>(null);
-            await _commands.AddModuleAsync<CoDModule>(null);
-            await _commands.AddModuleAsync<DFateModule>(null);
-            await _commands.AddModuleAsync<HelperModule>(null);
-        }
+        if (!m_methods.TryGetValue(teils[0], out MethodRoute method))
+            return;
 
-        private async Task HandleCommandAsync(SocketMessage msgParam)
-        {
-            SocketUserMessage msg = (SocketUserMessage)msgParam;
-            if (msg == null)
-                return;
+        string[] reply = method.ExecuteMethod(message, m_context);
 
-            int argPos = 0;
-
-            if (!(msg.HasCharPrefix('!', ref argPos) || msg.HasMentionPrefix(_client.CurrentUser, ref argPos)) || msg.Author.IsBot)
-                return;
-
-
-            SocketCommandContext context = new(_client, msg);
-
-            await _commands.ExecuteAsync(context, argPos, null);
-        }
+        foreach(string line in reply)
+            await message.Channel.SendMessageAsync(line);
     }
 }

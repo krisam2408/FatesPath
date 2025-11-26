@@ -1,68 +1,85 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
-using DiscordBot.Extensions;
-using DiscordBot.Services.ConfigurationLib;
+﻿using Discord.WebSocket;
 using FatesPathLib;
-using System;
+using FatesPathLib.Configuration;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace DiscordBot.Modules
+namespace DiscordBot.Modules;
+
+internal class CoDModule : BaseModule
 {
-    public class CoDModule : ModuleBase<SocketCommandContext>
+    public string[] Cast(SocketUserMessage message, FateConfig context)
     {
-        [Command("cast")]
-        [Summary("Cast a dice")]
-        public async Task CastFateAsync(string args)
+        FateCaster caster = new(context);
+        string[] args = GetArguments(message);
+
+        if(args.Length == 0)
+            return ["Invalid command format"];
+
+        List<string> result = [];
+
+        SocketUser currentUser = message.Author;
+
+        if (!int.TryParse(args[0], out int quantity))
+            quantity = 0;
+
+        int originalQuantity = quantity;
+        if (originalQuantity < 0)
+            originalQuantity = 0;
+
+        if (quantity == 0)
+            quantity = 1;
+
+        bool isInspired = args.Contains("-i");
+        bool isRoted = args.Contains("-r");
+
+        PathPool pool = new(
+            diceType: DiceType.D10, 
+            quantity: quantity,
+            difficulty: 8,
+            throwAgain: true,
+            throwAgainMinValue: 10,
+            isRote: isRoted
+        );
+
+        ResultPath path = caster.CastFate(pool);
+
+        int successes = path.Successes(8);
+
+        string checkResult()
         {
-            FateCaster caster = new(Config.Instance.FateConfig);
+            int exceptionalLimit = 5;
+            if (isInspired)
+                exceptionalLimit = 3;
 
-            int quantity = args.SetThrowQuantity();
-            int actTAMV = args.SetThrowAgainMinValue();
-            DiceType actDC = args.SetDiceTypeValue();
-            int actDF = args.SetThrowDifficulty();
-            bool actI = args.IsInspired();
-            bool actR = args.IsRoted();
-            int actQ = quantity > 0 ? quantity : 1;
-            bool actTA = quantity > 0 && Config.Instance.DefaultCast.ThrowAgain;
+            if (successes > exceptionalLimit)
+                return "Exceptional Success";
 
-            PathPool pathPool = new(
-                diceType: actDC, 
-                quantity: actQ,
-                difficulty: actDF,
-                throwAgain: actTA,
-                throwAgainMinValue: actTAMV,
-                isRote: actR
-            );
-
-            ResultPath resultPath = caster.CastFate(pathPool);
-            SocketUser currentUser = Context.User;
-
-            int successes = resultPath.Successes(actDF);
-            string endResult = "Failure";
-            int excLimit = actI ? 3 : 5;
             if (successes > 0)
-                endResult = successes < excLimit ? "Success" : "Exceptional Success";
+                return "Success";
 
-            if(!(quantity > 0))
-            {
-                successes = resultPath.Successes((int)actDC);
-                int failures = resultPath.Failures(Config.Instance.DefaultCast.Threshold);
-                int mRes = successes - failures;
-                endResult = mRes switch
-                {
-                    -1 => "Dramatic Failure",
-                    1 => "Success",
-                    _ => "Failure"
-                };
-            }
-
-            string result = $"{currentUser.Username} => Final Pool: {resultPath.ResultsPool} Successes: {successes} Result: {endResult}. {resultPath.ResultsString}";
-
-            await ReplyAsync(result);
+            return "Failure";
         }
 
+        string endResult = checkResult();
         
+        if(originalQuantity == 0)
+        {
+            successes = path.Successes(10);
+            int failures = path.Failures(1);
+            int mRes = successes - failures;
+            endResult = mRes switch
+            {
+                -1 => "Dramatic Failure",
+                1 => "Success",
+                _ => "Failure"
+            };
+        }
+
+        string reply = $"{currentUser.Username} => Final Pool: {path.ResultsPool} Successes: {successes} Result: {endResult}. {path.ResultsString}";
+
+        return [reply];
     }
+
+    
 }

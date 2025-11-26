@@ -1,68 +1,68 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
-using DiscordBot.Services.ConfigurationLib;
+﻿using Discord.WebSocket;
 using FatesPathLib;
+using FatesPathLib.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-namespace DiscordBot.Modules
+namespace DiscordBot.Modules;
+
+internal class GeneralModule : BaseModule
 {
-    public class GeneralModule : ModuleBase<SocketCommandContext>
+    public string[] Roll(SocketUserMessage message, FateConfig context)
     {
-        [Command("roll")]
-        [Summary("Roll dices")]
-        public async Task RollFateAsync(string args)
+        string[] args = GetArguments(message);
+
+        if (args.Length == 0)
+            return ["Invalid command format"];
+
+        SocketUser currentUser = message.Author;
+        FateCaster caster = new(context);
+        List<string> result = [];
+
+        foreach (string arg in args)
         {
-            FateCaster caster = new(Config.Instance.FateConfig);
-            SocketUser currentUser = Context.User;
-
-            string[] cmdArray = args.ToLower().Split(',');
-
-            foreach (string cmd in cmdArray)
+            try
             {
-                try
-                {
-                    int[] _params = cmd.Trim()
-                        .Split('d')
-                        .Select(i => int.Parse(i))
-                        .ToArray();
+                int[] parameters = arg.Trim()
+                    .Split('d')
+                    .Select(i => int.Parse(i))
+                    .ToArray();
 
-                    DiceType dice = (DiceType)_params[1];
+                DiceType dice = (DiceType)parameters[1];
 
-                    PathPool pool = new(dice, _params[0]);
-                    ResultPath result = caster.CastFate(pool);
+                PathPool pool = new(dice, parameters[0]);
+                ResultPath path = caster.CastFate(pool);
 
-                    string reply = $"{currentUser.Username} rolled {cmd.ToUpper()}: {result.ResultsString}";
+                string reply = $"{currentUser.Username} rolled {arg.ToUpper()}: {path.ResultsString}";
 
-                    await ReplyAsync(reply);
+                result.Add(reply);
 
-                }
-                catch (Exception)
-                {
-                    await ReplyAsync("Invalid command format");
-                }
+            }
+            catch (Exception)
+            {
+                result.Add("Invalid command format");
             }
         }
 
-        [Command("coin")]
-        [Summary("Flip a Coin")]
-        public async Task CoinFateAsync()
-        {
-            FateCaster caster = new(Config.Instance.FateConfig);
-            SocketUser currentUser = Context.User;
-
-            DiceType dice = DiceType.Coin;
-
-            PathPool pool = new(dice, 1);
-            ResultPath result = caster.CastFate(pool);
-
-            int diceResult = result.Results[0].Result;
-
-            string reply = diceResult == 1 ? $"{currentUser.Username} flipped NO" : $"{currentUser} flipped YES";
-
-            await ReplyAsync(reply);
-        }
-
+        return result.ToArray();
     }
+
+    public string[] Coin(SocketUserMessage message, FateConfig context)
+    {
+        FateCaster caster = new(context);
+        SocketUser currentUser = message.Author;
+
+        DiceType dice = DiceType.Coin;
+
+        PathPool pool = new(dice, 1);
+        ResultPath result = caster.CastFate(pool);
+
+        int diceResult = result.Results[0].Result;
+
+        string reply = diceResult == 1 ? $"{currentUser.Username} flipped NO" : $"{currentUser} flipped YES";
+
+        return [ reply ];
+    }
+
 }
