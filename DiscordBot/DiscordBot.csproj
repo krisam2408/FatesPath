@@ -24,8 +24,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MicroProjects\AppConfigLib\AppConfigLib.csproj" />
     <ProjectReference Include="..\FatesPathLib\FatesPathLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="AppConfigLib">
+      <HintPath>AppConfigLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

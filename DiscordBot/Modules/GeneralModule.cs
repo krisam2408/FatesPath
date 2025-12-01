@@ -14,7 +14,7 @@ internal class GeneralModule : BaseModule
         string[] args = GetArguments(message);
 
         if (args.Length == 0)
-            return ["Invalid command format"];
+            return ["Formato de comando inválido"];
 
         SocketUser currentUser = message.Author;
         FateCaster caster = new(context);
@@ -34,14 +34,14 @@ internal class GeneralModule : BaseModule
                 PathPool pool = new(dice, parameters[0]);
                 ResultPath path = caster.CastFate(pool);
 
-                string reply = $"{currentUser.Username} rolled {arg.ToUpper()}: {path.ResultsString}";
+                string reply = $"{currentUser.Username} lanzó {arg.ToUpper()}: {path.ResultsString}";
 
                 result.Add(reply);
 
             }
             catch (Exception)
             {
-                result.Add("Invalid command format");
+                result.Add("Formato de comando inválido");
             }
         }
 
@@ -60,7 +60,7 @@ internal class GeneralModule : BaseModule
 
         int diceResult = result.Results[0].Result;
 
-        string reply = diceResult == 1 ? $"{currentUser.Username} flipped NO" : $"{currentUser} flipped YES";
+        string reply = diceResult == 1 ? $"{currentUser.Username} lanzó NO" : $"{currentUser.Username} lanzó SÍ";
 
         return [ reply ];
     }

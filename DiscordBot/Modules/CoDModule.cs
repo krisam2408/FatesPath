@@ -2,7 +2,9 @@
 using FatesPathLib;
 using FatesPathLib.Configuration;
 using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace DiscordBot.Modules;
 
@@ -10,25 +12,21 @@ internal class CoDModule : BaseModule
 {
     public string[] Cast(SocketUserMessage message, FateConfig context)
     {
-        FateCaster caster = new(context);
         string[] args = GetArguments(message);
 
         if(args.Length == 0)
-            return ["Invalid command format"];
+            return ["Formato de comando inválido"];
 
         List<string> result = [];
 
+        FateCaster caster = new(context);
         SocketUser currentUser = message.Author;
 
         if (!int.TryParse(args[0], out int quantity))
-            quantity = 0;
-
-        int originalQuantity = quantity;
-        if (originalQuantity < 0)
-            originalQuantity = 0;
+            return [];
 
         if (quantity == 0)
-            quantity = 1;
+            return CastZero(message, context);
 
         bool isInspired = args.Contains("-i");
         bool isRoted = args.Contains("-r");
@@ -45,41 +43,70 @@ internal class CoDModule : BaseModule
         ResultPath path = caster.CastFate(pool);
 
         int successes = path.Successes(8);
+        string pathResult = CheckResult(isInspired, successes);
 
-        string checkResult()
-        {
-            int exceptionalLimit = 5;
-            if (isInspired)
-                exceptionalLimit = 3;
+        string reply = $"""
+            {currentUser.Username} tira =>
+            Tirada Final: {path.ResultsPool}
+            Éxitos: {successes}
+            Resultado: {pathResult}
+            {path.ResultsString}
+            """;
+            
+        return [reply];
+    }
 
-            if (successes > exceptionalLimit)
-                return "Exceptional Success";
+    private string[] CastZero(SocketUserMessage message, FateConfig context)
+    {
+        FateCaster caster = new(context);
+        SocketUser currentUser = message.Author;
 
-            if (successes > 0)
-                return "Success";
+        PathPool pool = new(
+            diceType: DiceType.D10,
+            quantity: 1,
+            difficulty: 10,
+            throwAgain: false
+        );
 
-            return "Failure";
-        }
+        ResultPath path = caster.CastFate(pool);
 
-        string endResult = checkResult();
-        
-        if(originalQuantity == 0)
-        {
-            successes = path.Successes(10);
-            int failures = path.Failures(1);
-            int mRes = successes - failures;
-            endResult = mRes switch
-            {
-                -1 => "Dramatic Failure",
-                1 => "Success",
-                _ => "Failure"
-            };
-        }
+        int successes = path.Successes(10);
+        int failures = path.Failures(1);
+        string pathResult = CheckResult(false, successes, failures);
 
-        string reply = $"{currentUser.Username} => Final Pool: {path.ResultsPool} Successes: {successes} Result: {endResult}. {path.ResultsString}";
+        string reply = $"""
+            {currentUser.Username} tira =>
+            Tirada Final: {path.ResultsPool}
+            Éxitos: {successes}
+            Fallos: {failures}
+            Resultado: {pathResult}
+            {path.ResultsString}
+            """;
 
         return [reply];
     }
 
-    
+    private string CheckResult(bool inspired, int successes, int failures = 0)
+    {
+        int exceptionalLimit = 5;
+        if (inspired)
+            exceptionalLimit = 3;
+
+        if (successes >= exceptionalLimit)
+            return "Éxito Excepcional";
+
+        if (successes > 0)
+            return "Éxito";
+
+        bool dramatic = failures > 0;
+
+        if(!dramatic)
+            return "Fallo";
+
+        int mRes = successes - failures;
+        if (mRes < 0)
+            return "Fallo Dramático";
+
+        return "Fallo";
+    }
 }

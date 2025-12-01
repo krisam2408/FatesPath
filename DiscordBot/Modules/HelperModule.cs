@@ -5,5 +5,5 @@ namespace DiscordBot.Modules;
 
 internal class HelperModule : BaseModule
 {
-    public string[] Ping(SocketUserMessage message, FateConfig context) => ["FateCast Bot is available"];
+    public string[] Ping(SocketUserMessage message, FateConfig context) => ["FateCast Bot está disponible"];
 }
