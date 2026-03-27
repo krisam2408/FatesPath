@@ -1,7 +1,6 @@
 ﻿using Discord.WebSocket;
 using DiscordBot.DataTransfer;
 using DiscordBot.Modules;
-using FatesPathLib.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -12,7 +11,6 @@ namespace DiscordBot;
 public class CommandHandler
 {
     private readonly Dictionary<string, MethodRoute> m_methods = new();
-    private readonly FateConfig m_context;
 
     private readonly string[] m_baseMethods = [
         "gettype",
@@ -22,10 +20,7 @@ public class CommandHandler
         "getarguments"
     ];
 
-    public CommandHandler(FateConfig context) 
-    {
-        m_context = context;
-    }
+    public CommandHandler() { }
 
     internal async Task InstallModule<T>() where T : BaseModule
     {
@@ -61,7 +56,7 @@ public class CommandHandler
         if (!m_methods.TryGetValue(teils[0], out MethodRoute method))
             return;
 
-        string[] reply = method.ExecuteMethod(message, m_context);
+        string[] reply = method.ExecuteMethod(message);
 
         foreach(string line in reply)
             await message.Channel.SendMessageAsync(line);

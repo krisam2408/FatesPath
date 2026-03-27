@@ -22,7 +22,7 @@ public sealed class DiscordBotApp
         };
 
         m_client = new(config);
-        m_commands = new(appConfig.FateConfig);
+        m_commands = new();
         m_discordToken = appConfig.DiscordToken;
     }
 

@@ -1,25 +1,11 @@
-﻿using FatesPathLib.Configuration;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace FatesPathLib;
 
 public sealed class FateCaster
 {
-    private int TensorY { get; set; }
-    private int TensorZ { get; set; }
-
-    public FateCaster(int y = 1, int z = 1)
-    {
-        TensorY = y;
-        TensorZ = z;
-    }
-
-    public FateCaster(FateConfig config)
-    {
-        TensorY = config.TensorY;
-        TensorZ = config.TensorZ;
-    }
+    private readonly Random m_random = new();
 
     public ResultPath CastFate(params PathPool[] pool)
     {
@@ -40,22 +26,10 @@ public sealed class FateCaster
         List<Dice> roteRoll = new();
         List<Dice> againRoll = new();
 
-        Random ran = new();
-        int[,,] preliminarResult = new int[path.Quantity,TensorY,TensorZ];
-
-        for(int z = 0; z < TensorZ; z++)
-            for(int y = 0; y < TensorY;y++)
-                for(int x = 0; x < path.Quantity; x++)
-                {
-                    int r = ran.Next((int)path.Dice) + 1;
-                    preliminarResult[x, y, z] = r;
-                }
-
-        for(int pickX = 0; pickX < path.Quantity; pickX++)
+        for(int i = 0; i < path.Quantity; i++)
         {
-            int pickZ = ran.Next(TensorZ);
-            int pickY = ran.Next(TensorY);
-            firstRoll.Add(new(path.Dice, preliminarResult[pickX, pickY, pickZ]));
+            int pick = m_random.Next((int)path.Dice) + 1;
+            firstRoll.Add(new(path.Dice, pick));
         }
 
         if(path.IsRote)
@@ -68,7 +42,8 @@ public sealed class FateCaster
             if(failures > 0)
             {
                 PathPool rotePathPool = new(path.Dice, failures, path.ThrowDifficulty, false, 0, false);
-                roteRoll.AddRange(CastSinglePath(rotePathPool));
+                Dice[] roteResults = CastSinglePath(rotePathPool);
+                roteRoll.AddRange(roteResults);
             }
         }
 
@@ -82,7 +57,8 @@ public sealed class FateCaster
             if(againRolls > 0)
             {
                 PathPool againPathPool = new(path.Dice, againRolls, path.ThrowDifficulty, true, path.ThrowAgainMinValue, false);
-                againRoll.AddRange(CastSinglePath(againPathPool));
+                Dice[] againResults = CastSinglePath(againPathPool);
+                againRoll.AddRange(againResults);
             }
         }
 

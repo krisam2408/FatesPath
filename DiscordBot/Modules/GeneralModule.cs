@@ -1,6 +1,5 @@
 ﻿using Discord.WebSocket;
 using FatesPathLib;
-using FatesPathLib.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +8,7 @@ namespace DiscordBot.Modules;
 
 internal class GeneralModule : BaseModule
 {
-    public string[] Roll(SocketUserMessage message, FateConfig context)
+    public string[] Roll(SocketUserMessage message)
     {
         string[] args = GetArguments(message);
 
@@ -17,7 +16,7 @@ internal class GeneralModule : BaseModule
             return ["Formato de comando inválido"];
 
         SocketUser currentUser = message.Author;
-        FateCaster caster = new(context);
+        FateCaster caster = new();
         List<string> result = [];
 
         foreach (string arg in args)
@@ -48,9 +47,9 @@ internal class GeneralModule : BaseModule
         return result.ToArray();
     }
 
-    public string[] Coin(SocketUserMessage message, FateConfig context)
+    public string[] Coin(SocketUserMessage message)
     {
-        FateCaster caster = new(context);
+        FateCaster caster = new();
         SocketUser currentUser = message.Author;
 
         DiceType dice = DiceType.Coin;

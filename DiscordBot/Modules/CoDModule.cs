@@ -1,6 +1,5 @@
 ﻿using Discord.WebSocket;
 using FatesPathLib;
-using FatesPathLib.Configuration;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Linq;
@@ -10,7 +9,7 @@ namespace DiscordBot.Modules;
 
 internal class CoDModule : BaseModule
 {
-    public string[] Cast(SocketUserMessage message, FateConfig context)
+    public string[] Cast(SocketUserMessage message)
     {
         string[] args = GetArguments(message);
 
@@ -19,14 +18,14 @@ internal class CoDModule : BaseModule
 
         List<string> result = [];
 
-        FateCaster caster = new(context);
+        FateCaster caster = new();
         SocketUser currentUser = message.Author;
 
         if (!int.TryParse(args[0], out int quantity))
             return [];
 
         if (quantity == 0)
-            return CastZero(message, context);
+            return CastZero(message);
 
         bool isInspired = args.Contains("-i");
         bool isRoted = args.Contains("-r");
@@ -56,9 +55,9 @@ internal class CoDModule : BaseModule
         return [reply];
     }
 
-    private string[] CastZero(SocketUserMessage message, FateConfig context)
+    private string[] CastZero(SocketUserMessage message)
     {
-        FateCaster caster = new(context);
+        FateCaster caster = new();
         SocketUser currentUser = message.Author;
 
         PathPool pool = new(
