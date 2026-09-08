@@ -1,8 +1,12 @@
 ﻿using Discord.WebSocket;
+using System.Threading.Tasks;
 
 namespace DiscordBot.Modules;
 
-internal class HelperModule : BaseModule
+internal static class HelperModule
 {
-    public string[] Ping(SocketUserMessage message) => ["FateCast Bot está disponible"];
+    public static async Task Ping(SocketSlashCommand cmd)
+    {
+        await cmd.RespondAsync("Hola, aquí estoy!");
+    } 
 }

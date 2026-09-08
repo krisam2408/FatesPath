@@ -1,34 +1,48 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 using FatesPathLib;
-using System.Collections.Generic;
-using System.IO.Pipelines;
+using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace DiscordBot.Modules;
 
-internal class CoDModule : BaseModule
+internal static class CoDModule
 {
-    public string[] Cast(SocketUserMessage message)
+    public static async Task Cast(SocketSlashCommand cmd)
     {
-        string[] args = GetArguments(message);
+        long longQ = (long)cmd
+            .Data
+            .Options
+            .Where(o => o.Name == "cantidad")
+            .First()
+            .Value;
 
-        if(args.Length == 0)
-            return ["Formato de comando inválido"];
+        int quantity = (int)Math.Clamp(longQ, 0, 100);
+        
+        SocketSlashCommandDataOption boolI = cmd
+            .Data
+            .Options
+            .Where(o => o.Name == "inspirado")
+            .FirstOrDefault();
 
-        List<string> result = [];
+        bool isInspired = boolI == null ? false : (bool)boolI.Value;
+
+        SocketSlashCommandDataOption boolR = cmd
+            .Data
+            .Options
+            .Where(o => o.Name == "rutinaria")
+            .FirstOrDefault();
+
+        bool isRoted = boolR == null ? false : (bool)boolR.Value;
 
         FateCaster caster = new();
-        SocketUser currentUser = message.Author;
-
-        if (!int.TryParse(args[0], out int quantity))
-            return [];
 
         if (quantity == 0)
-            return CastZero(message);
-
-        bool isInspired = args.Contains("-i");
-        bool isRoted = args.Contains("-r");
+        {
+            await CastZero(cmd);
+            return;
+        }
 
         PathPool pool = new(
             diceType: DiceType.D10, 
@@ -42,23 +56,42 @@ internal class CoDModule : BaseModule
         ResultPath path = caster.CastFate(pool);
 
         int successes = path.Successes(8);
-        string pathResult = CheckResult(isInspired, successes);
+        Success pathResult = CheckResult(isInspired, successes);
+
+        string result = pathResult switch
+        {
+            Success.Exceptional => "Éxito Excepcional",
+            Success.Success => "Éxito",
+            Success.DramaticFailure => "Fallo Dramático",
+            _ => "Fallo"
+        };
+
+        Color color = pathResult switch
+        {
+            Success.Exceptional or Success.Success => Color.Green,
+            _ => Color.Red
+        };
 
         string reply = $"""
-            {currentUser.Username} tira =>
             Tirada Final: {path.ResultsPool}
             Éxitos: {successes}
-            Resultado: {pathResult}
+            Resultado: {result}
             {path.ResultsString}
             """;
-            
-        return [reply];
+
+        EmbedBuilder eb = new EmbedBuilder()
+            .WithAuthor(cmd.User.GlobalName, cmd.User.GetAvatarUrl() ?? cmd.User.GetDefaultAvatarUrl())
+            .WithTitle($"lanzó {path.ResultsPool} dados:")
+            .WithDescription(reply)
+            .WithColor(color)
+            .WithCurrentTimestamp();
+
+        await cmd.RespondAsync(embed: eb.Build());
     }
 
-    private string[] CastZero(SocketUserMessage message)
+    private static async Task CastZero(SocketSlashCommand cmd)
     {
         FateCaster caster = new();
-        SocketUser currentUser = message.Author;
 
         PathPool pool = new(
             diceType: DiceType.D10,
@@ -71,41 +104,61 @@ internal class CoDModule : BaseModule
 
         int successes = path.Successes(10);
         int failures = path.Failures(1);
-        string pathResult = CheckResult(false, successes, failures);
+        Success pathResult = CheckResult(false, successes, failures);
+
+        string result = pathResult switch
+        {
+            Success.Exceptional => "Éxito Excepcional",
+            Success.Success => "Éxito",
+            Success.DramaticFailure => "Fallo Dramático",
+            _ => "Fallo"
+        };
+
+        Color color = pathResult switch
+        {
+            Success.Exceptional or Success.Success => Color.Green,
+            _ => Color.Red
+        };
 
         string reply = $"""
-            {currentUser.Username} tira =>
             Tirada Final: {path.ResultsPool}
             Éxitos: {successes}
             Fallos: {failures}
-            Resultado: {pathResult}
+            Resultado: {result}
             {path.ResultsString}
             """;
 
-        return [reply];
+        EmbedBuilder eb = new EmbedBuilder()
+            .WithAuthor(cmd.User.GlobalName, cmd.User.GetAvatarUrl() ?? cmd.User.GetDefaultAvatarUrl())
+            .WithTitle($"lanzó 1 dado:")
+            .WithDescription(reply)
+            .WithColor(color)
+            .WithCurrentTimestamp();
+
+        await cmd.RespondAsync(embed: eb.Build());
     }
 
-    private string CheckResult(bool inspired, int successes, int failures = 0)
+    private static Success CheckResult(bool inspired, int successes, int failures = 0)
     {
         int exceptionalLimit = 5;
         if (inspired)
             exceptionalLimit = 3;
 
         if (successes >= exceptionalLimit)
-            return "Éxito Excepcional";
+            return Success.Exceptional;
 
         if (successes > 0)
-            return "Éxito";
+            return Success.Success;
 
         bool dramatic = failures > 0;
 
         if(!dramatic)
-            return "Fallo";
+            return Success.Failure;
 
         int mRes = successes - failures;
         if (mRes < 0)
-            return "Fallo Dramático";
+            return Success.DramaticFailure;
 
-        return "Fallo";
+        return Success.Failure;
     }
 }

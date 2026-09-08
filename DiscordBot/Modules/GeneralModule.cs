@@ -1,56 +1,56 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 using FatesPathLib;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DiscordBot.Modules;
 
-internal class GeneralModule : BaseModule
+internal static class GeneralModule
 {
-    public string[] Roll(SocketUserMessage message)
+    public static async Task Roll(SocketSlashCommand cmd)
     {
-        string[] args = GetArguments(message);
+        long longQ = (long)cmd
+            .Data
+            .Options
+            .Where(o => o.Name == "cantidad")
+            .First()
+            .Value;
 
-        if (args.Length == 0)
-            return ["Formato de comando inválido"];
+        int quantity = (int)Math.Clamp(longQ, 0, 100);
 
-        SocketUser currentUser = message.Author;
+        long longF = (long)cmd
+            .Data
+            .Options
+            .Where(o => o.Name == "caras")
+            .First()
+            .Value;
+
+        int faces = (int)Math.Clamp(longF, 0, 100);
+
         FateCaster caster = new();
-        List<string> result = [];
 
-        foreach (string arg in args)
-        {
-            try
-            {
-                int[] parameters = arg.Trim()
-                    .Split('d')
-                    .Select(i => int.Parse(i))
-                    .ToArray();
+        DiceType dice = (DiceType)faces;
 
-                DiceType dice = (DiceType)parameters[1];
+        PathPool pool = new(dice, quantity);
+        ResultPath path = caster.CastFate(pool);
 
-                PathPool pool = new(dice, parameters[0]);
-                ResultPath path = caster.CastFate(pool);
+        EmbedBuilder eb = new EmbedBuilder()
+            .WithAuthor(cmd.User.GlobalName, cmd.User.GetAvatarUrl() ?? cmd.User.GetDefaultAvatarUrl())
+            .WithTitle($"lanzó {quantity}d{faces}:")
+            .WithDescription(path.ResultsString)
+            .WithColor(Color.Green)
+            .WithCurrentTimestamp();
 
-                string reply = $"{currentUser.Username} lanzó {arg.ToUpper()}: {path.ResultsString}";
-
-                result.Add(reply);
-
-            }
-            catch (Exception)
-            {
-                result.Add("Formato de comando inválido");
-            }
-        }
-
-        return result.ToArray();
+        await cmd.RespondAsync(embed: eb.Build());
     }
 
-    public string[] Coin(SocketUserMessage message)
+    public static async Task Coin(SocketSlashCommand cmd)
     {
         FateCaster caster = new();
-        SocketUser currentUser = message.Author;
+        string currentUser = cmd.User.GlobalName;
 
         DiceType dice = DiceType.Coin;
 
@@ -59,9 +59,16 @@ internal class GeneralModule : BaseModule
 
         int diceResult = result.Results[0].Result;
 
-        string reply = diceResult == 1 ? $"{currentUser.Username} lanzó NO" : $"{currentUser.Username} lanzó SÍ";
+        string reply = diceResult == 1 ? "SELLO" : "CARA";
 
-        return [ reply ];
+        EmbedBuilder eb = new EmbedBuilder()
+            .WithAuthor(cmd.User.GlobalName, cmd.User.GetAvatarUrl() ?? cmd.User.GetDefaultAvatarUrl())
+            .WithTitle("lanzó una moneda:")
+            .WithDescription(reply)
+            .WithColor(Color.Green)
+            .WithCurrentTimestamp();
+
+        await cmd.RespondAsync(reply);
     }
 
 }
