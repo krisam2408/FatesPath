@@ -95,8 +95,7 @@ public sealed class DiscordBotApp
                 .WithName("cod")
                 .WithDescription("Lanza dados con reglas de CoD")
                 .AddOption("cantidad", ApplicationCommandOptionType.Integer, "Cantidad de dados a lanzar", isRequired: true)
-                .AddOption("inspirado", ApplicationCommandOptionType.Boolean, "La tirada es inspirada", isRequired: false)
-                .AddOption("rutinaria", ApplicationCommandOptionType.Boolean, "La tirada es rutinaria", isRequired: false);
+                .AddOption("argumentos", ApplicationCommandOptionType.String, "argumentos opcionales", isRequired: false);
             appCommands.Add(castCommand.Build());
 
             await m_client.BulkOverwriteGlobalApplicationCommandsAsync(appCommands.ToArray());

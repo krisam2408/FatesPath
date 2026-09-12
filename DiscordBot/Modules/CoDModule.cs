@@ -20,21 +20,32 @@ internal static class CoDModule
 
         int quantity = (int)Math.Clamp(longQ, 0, 100);
         
-        SocketSlashCommandDataOption boolI = cmd
+        SocketSlashCommandDataOption argsOption = cmd
             .Data
             .Options
             .Where(o => o.Name == "inspirado")
             .FirstOrDefault();
 
-        bool isInspired = boolI == null ? false : (bool)boolI.Value;
+        bool isInspired = false;
+        bool isRoted = false;
+        int minThrowAgain = 10;
 
-        SocketSlashCommandDataOption boolR = cmd
-            .Data
-            .Options
-            .Where(o => o.Name == "rutinaria")
-            .FirstOrDefault();
+        string args = argsOption == null ? null : (string)argsOption.Value;
 
-        bool isRoted = boolR == null ? false : (bool)boolR.Value;
+        if (!string.IsNullOrWhiteSpace(args))
+        {
+            if (args.Contains("-i"))
+                isInspired = true;
+
+            if (args.Contains("-r"))
+                isRoted = true;
+
+            if (args.Contains("-9"))
+                minThrowAgain = 9;
+
+            if (args.Contains("-8"))
+                minThrowAgain = 8;
+        }
 
         FateCaster caster = new();
 
@@ -49,7 +60,7 @@ internal static class CoDModule
             quantity: quantity,
             difficulty: 8,
             throwAgain: true,
-            throwAgainMinValue: 10,
+            throwAgainMinValue: minThrowAgain,
             isRote: isRoted
         );
 
