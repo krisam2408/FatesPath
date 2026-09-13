@@ -92,7 +92,7 @@ internal static class CoDModule
 
         EmbedBuilder eb = new EmbedBuilder()
             .WithAuthor(cmd.User.GlobalName, cmd.User.GetAvatarUrl() ?? cmd.User.GetDefaultAvatarUrl())
-            .WithTitle($"lanzó {path.ResultsPool} dados:")
+            .WithTitle($"lanzó {quantity} dados:")
             .WithDescription(reply)
             .WithColor(color)
             .WithCurrentTimestamp();
